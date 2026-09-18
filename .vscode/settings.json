@@ -1,0 +1,27 @@
+{
+  "editor.rulers": [100],
+
+  "files.exclude": {
+    "**/__pycache__/**": true,
+    ".ruff_cache/**": true,
+    ".venv/**": true
+  },
+  "files.watcherExclude": {
+    "**/__pycache__/**": true,
+    ".ruff_cache/**": true,
+    ".venv/**": true
+  },
+
+  "python.languageServer": "None",
+  "ty.completions.autoImport": false,
+
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "never"
+    }
+  }
+}

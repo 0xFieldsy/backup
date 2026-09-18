@@ -1,0 +1,10 @@
+.DS_Store
+.env
+.ruff_cache/
+.venv/
+__pycache__/
+.lock
+backup.log
+backup.txt
+exclude.txt
+restore.log
