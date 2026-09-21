@@ -128,4 +128,9 @@ def probe_repo(restic: str, env: dict, host: str | None = None) -> int:
     cmd = [restic, "snapshots"]
     if host:
         cmd += ["--tag", host]
-    return run(cmd, env)
+    proc = subprocess.run(
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, env=env, check=False
+    )
+    for line in proc.stderr.splitlines():
+        logging.getLogger(LOGGER).info(line.rstrip())
+    return proc.returncode

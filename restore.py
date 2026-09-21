@@ -12,6 +12,7 @@ Usage:
   restore.py --force              allow restoring into / or $HOME
   restore.py --list               list snapshots for this host
   restore.py --dry-run            print resolved config and the restic command
+  restore.py --log-level LEVEL    log verbosity; "none" keeps the run out of restore.log
 """
 
 import argparse
@@ -21,7 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # find lib via a symlink
 
 from lib.config import HOST, load_env_file, resolve_repo
-from lib.log import setup_logging
+from lib.log import LEVELS, setup_logging
 from lib.restic import (
     REPO_NOT_FOUND,
     find_restic,
@@ -102,6 +103,14 @@ def main() -> None:
         action="store_true",
         help="re-read restored files and compare them against the snapshot",
     )
+    ap.add_argument(
+        "--log-level",
+        metavar="LEVEL",
+        choices=LEVELS,
+        default="info",
+        help=f"log verbosity: {', '.join(LEVELS)} (default: info); "
+        "'none' logs to stdout only, leaving restore.log untouched",
+    )
     args = ap.parse_args()
 
     if not args.list and not args.target:
@@ -152,7 +161,7 @@ def main() -> None:
     if args.list:
         list_snapshots(restic, args.host, env)
 
-    log = setup_logging("restore.log")
+    log = setup_logging("restore.log", args.log_level)
     cmd[0] = restic
 
     status = probe_repo(restic, env, args.host)

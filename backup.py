@@ -3,16 +3,17 @@
 Restic backup to Cloudflare R2.
 
 Usage:
-  backup.py [PATH ...]        folders to back up (absolute, relative to cwd, or ~/...)
-  backup.py -b FILE           also include the folders listed in FILE
-  backup.py --exclude-file FILE  apply restic exclude patterns from FILE
-  backup.py --bucket NAME     R2 bucket (default: backup-<hostname>)
-  backup.py --path PATH       local repo path for testing (bypasses CF keys)
-  backup.py --keep-days N     keep N daily snapshots (default 7; 0 skips forget/prune)
-  backup.py --retry-lock DUR  wait DUR for a locked repo (default 5m)
-  backup.py --no-gitignore    don't derive excludes from .gitignore files
-  backup.py --list            list snapshots for this host
-  backup.py --dry-run         print resolved config and path list
+  backup.py [PATH ...]             folders to back up (absolute, relative to cwd, or ~/...)
+  backup.py -b FILE                also include the folders listed in FILE
+  backup.py --exclude-file FILE    apply restic exclude patterns from FILE
+  backup.py --bucket NAME          R2 bucket (default: backup-<hostname>)
+  backup.py --path PATH            local repo path for testing (bypasses CF keys)
+  backup.py --keep-days N          keep N daily snapshots (default 7; 0 skips forget/prune)
+  backup.py --retry-lock DUR       wait DUR for a locked repo (default 5m)
+  backup.py --no-gitignore         don't derive excludes from .gitignore files
+  backup.py --list                 list snapshots for this host
+  backup.py --dry-run              print resolved config and path list
+  backup.py --log-level LEVEL      log verbosity; "none" keeps the run out of backup.log
 """
 
 import argparse
@@ -25,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # find lib via a symli
 
 from lib.config import BACKUP_DIR, HOST, load_env_file, resolve_repo
 from lib.gitignore import gitignore_patterns
-from lib.log import setup_logging
+from lib.log import LEVELS, setup_logging
 from lib.restic import (
     BACKUP_INCOMPLETE,
     REPO_LOCKED,
@@ -149,6 +150,14 @@ def main() -> None:
         default="5m",
         help="wait this long for a locked repo before giving up (default: 5m)",
     )
+    ap.add_argument(
+        "--log-level",
+        metavar="LEVEL",
+        choices=LEVELS,
+        default="info",
+        help=f"log verbosity: {', '.join(LEVELS)} (default: info); "
+        "'none' logs to stdout only, leaving backup.log untouched",
+    )
     args = ap.parse_args()
 
     if args.keep_days < 0:
@@ -206,7 +215,7 @@ def main() -> None:
     if args.list:
         list_snapshots(restic, HOST, env)
 
-    log = setup_logging("backup.log")
+    log = setup_logging("backup.log", args.log_level)
 
     lock_fd = acquire_lock(BACKUP_DIR / LOCK_NAME)
     if lock_fd is None:
@@ -243,7 +252,7 @@ def main() -> None:
         *(str(p) for p in paths),
         "--tag",
         HOST,
-        "--hostname",
+        "--host",
         HOST,
         "--one-file-system",
         "--skip-if-unchanged",
